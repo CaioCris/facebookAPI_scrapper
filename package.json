@@ -1,0 +1,17 @@
+{
+  "name": "node.js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "req.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "async": "^2.1.4",
+    "mongodb": "^2.2.22",
+    "redis": "^2.6.5",
+    "request": "^2.79.0"
+  }
+}
