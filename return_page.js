@@ -5,7 +5,7 @@ var MongoClient = require('mongodb').MongoClient
 var url = 'mongodb://localhost:27017/redis';
 var async = require("async");
 
-//PEgar as informações do redis e salvar elas dentro do MongoDB
+//Pegar as informações do redis e salvar elas dentro do MongoDB
 client.keys('*', function (err, keys) {
     MongoClient.connect(url, function (err, db) {
         async.each(keys, function (k, callback) {
