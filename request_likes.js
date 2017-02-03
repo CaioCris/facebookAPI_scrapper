@@ -1,4 +1,4 @@
-var url = "https://graph.facebook.com/v2.8/115987058416365_1508246135857110?fields=likes&access_token=EAACEdEose0cBANJG6dZBTPpoW8118mBXf7hVTNWXCMl67xyHKcyxDnrgQxoRcF7R8fFAQNr1KlkxpbPbfkyj4hlRFMF2xZBq1Q4UZCRLbcnqcfswZBJDHKkFI3nFiC831nZCGdQvhNFIYdfToegx5IRPr6S8PsmP8G5gEYjguZAlhyZCf7FpVOO"
+var url = "https://graph.facebook.com/v2.8/115987058416365_1508246135857110?fields=likes&access_token=EAACEdEose0cBALOFEboXB2D9ZACqGvu3YJfhdff5hO46BZAyRPHUvJEURkZAuZAbTFjXxv6Lypequ1rGZBM9LeQXZB2lZAGzhwarlkgkNHU8bentPSbHVeaii25vKUkC4RbXzAes8FKsmNPaG5ZCG9fmJ6Jpom9FrVnOYGoRkPmgk310e9w9NsjU"
 
 var request = require('request');
 var redis = require('redis');
@@ -14,21 +14,25 @@ if (typeof url !== "undefined") {
             var update = JSON.parse(body)
             if (update.likes) {
                 console.log("rodou aqui01")
-                update.likes.data[0].name = "Eu estive aqui"
-                var parent_id = "115987058416365_1508246135857110"
+                //update.likes.data[0].name = "Eu estive aqui"
+                var page_id = "115987058416365"
+                var post_id = "1508246135857110"
                 for (red in update.likes.data) {
                     var estadao_likes = update.likes.data[red]
                     var id = update.likes.data[red].id
-                    estadao_likes.parent_id = parent_id
+                    estadao_likes.page_id = page_id
+                    estadao_likes.page_id.post_id = post_id
                     client.set(id, JSON.stringify(estadao_likes))
                 }
             } else {
                 console.log("rodou aqui02")
-                update.data[0].name = "Eu estive aqui"
-                var parent_id = "115987058416365_1508246135857110"
+                //update.data[0].name = "Eu estive aqui"
+                var page_id = "115987058416365"
+                var post_id = "1508246135857110"
                 async.each(update.data, function (red, callback) {
                         var id = red.id
-                        red.parent_id = parent_id
+                        red.page_id = page_id
+                        red.page_id.post_id = post_id
                         client.set(id, JSON.stringify(red))
                         callback();
                     }),
