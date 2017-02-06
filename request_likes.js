@@ -1,4 +1,4 @@
-var url = "https://graph.facebook.com/v2.8/115987058416365_1508246135857110?fields=likes&access_token=EAACEdEose0cBALOFEboXB2D9ZACqGvu3YJfhdff5hO46BZAyRPHUvJEURkZAuZAbTFjXxv6Lypequ1rGZBM9LeQXZB2lZAGzhwarlkgkNHU8bentPSbHVeaii25vKUkC4RbXzAes8FKsmNPaG5ZCG9fmJ6Jpom9FrVnOYGoRkPmgk310e9w9NsjU"
+var url = "https://graph.facebook.com/v2.8/115987058416365_1508246135857110?fields=likes&access_token=EAACEdEose0cBAPTrAdq4Ay4q0kLrKM5Id7FZAZASOzGziTRIbvs5k9ZAvw6aTuhG4PJekJTIyrL5ZAqRLpI9olKb5SxoFvhNZBZCKuQWo5qpXZB7LNqa6TIDZCLw0lISr9TNSQWuZCfB0AZA6V1OzKPZBSYIZBr69T4aZCt5GBrXFoV6bqtADdkZBpG2MP"
 
 var request = require('request');
 var redis = require('redis');
@@ -7,33 +7,24 @@ var async = require("async");
 
 //Função que faz a requisição da de uma API(por meio da URL dada) e retorna uma string para o salvar no redis
 function req(url) {
-if (typeof url !== "undefined") {
-    console.log(url)
-    request.get(url, function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-            var update = JSON.parse(body)
-            if (update.likes) {
-                console.log("rodou aqui01")
-                //update.likes.data[0].name = "Eu estive aqui"
-                var page_id = "115987058416365"
-                var post_id = "1508246135857110"
-                for (red in update.likes.data) {
-                    var estadao_likes = update.likes.data[red]
-                    var id = update.likes.data[red].id
-                    estadao_likes.page_id = page_id
-                    estadao_likes.page_id.post_id = post_id
-                    client.set(id, JSON.stringify(estadao_likes))
+    if (typeof url !== "undefined") {
+        console.log(url)
+        request.get(url, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var update = JSON.parse(body)
+                if (update.likes) {
+                    var likes = update.likes.data
+                } else {
+                    var likes = update.data
                 }
-            } else {
-                console.log("rodou aqui02")
-                //update.data[0].name = "Eu estive aqui"
-                var page_id = "115987058416365"
-                var post_id = "1508246135857110"
-                async.each(update.data, function (red, callback) {
-                        var id = red.id
-                        red.page_id = page_id
-                        red.page_id.post_id = post_id
-                        client.set(id, JSON.stringify(red))
+                async.each(likes, function (estadao, callback) {
+                        var id = estadao.id
+                        var page_id = "115987058416365"
+                        var post_id = "1508246135857110"
+                        estadao.page_id = page_id
+                        estadao.post_id = post_id
+                        console.log(JSON.stringify(estadao))
+                        client.set(id, JSON.stringify(estadao))
                         callback();
                     }),
                     function (err) {
@@ -45,10 +36,8 @@ if (typeof url !== "undefined") {
             } else {
                 req(update.paging.next)
             }
-        }
-    })
+        })
+    }
 }
-}
-
 
 req(url)

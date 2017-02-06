@@ -1,4 +1,4 @@
-var url = "https://graph.facebook.com/v2.8/115987058416365?fields=posts&access_token=EAACEdEose0cBAPDHNd1ycRPeoeiZBxPaAwynm6FgZB3YlcfPfr8TwUSfWtZCEvJ7DVE77p5Qt9A7ZCTm7aIziZB5GZCssHCmetWUZAZCPpmqmQqdAOGFZCLAnX66U8viwMvsXwpF2ZBGvfCXYBovTwLLGpWNgueHsgtEUNaZC0jGa0fDO8qIgQnqbxw"
+var url = "https://graph.facebook.com/v2.8/115987058416365?fields=posts&access_token=EAACEdEose0cBAPTrAdq4Ay4q0kLrKM5Id7FZAZASOzGziTRIbvs5k9ZAvw6aTuhG4PJekJTIyrL5ZAqRLpI9olKb5SxoFvhNZBZCKuQWo5qpXZB7LNqa6TIDZCLw0lISr9TNSQWuZCfB0AZA6V1OzKPZBSYIZBr69T4aZCt5GBrXFoV6bqtADdkZBpG2MP"
 
 var request = require('request');
 var redis = require('redis');
@@ -12,36 +12,28 @@ function req(url) {
     request.get(url, function (error, response, body) {
       if (!error && response.statusCode == 200) {
         var update = JSON.parse(body)
-        //console.log(update)
         if (update.posts) {
-          console.log("rodou aqui01")
-          //update.posts.data[0].message = "Eu estive aqui"
-          for (red in update.posts.data) {
-            var estadao_item = update.posts.data[red]
-            var id = update.posts.data[red].id
-            client.set(id, JSON.stringify(estadao_item))
+          var posts = update.posts.data
+        } else {
+          var posts = update.data
+        }
+        async.each(posts, function (estadao, callback) {
+            var id = estadao.id
+            console.log(JSON.stringify(estadao))
+            client.set(id, JSON.stringify(estadao))
+            callback();
+          }),
+          function (err) {
+            client.quit();
           }
-        } else {
-          console.log("rodou aqui02")
-          //update.data[0].message = "Eu estive aqui"
-          async.each(update.data, function (red, callback) {
-              var id = red.id
-              client.set(id, JSON.stringify(red))
-              callback();
-            }),
-            function (err) {
-              client.quit();
-            }
-        }
-        if (update.posts) {
-          req(update.posts.paging.next)
-        } else {
-          req(update.paging.next)
-        }
+      }
+      if (update.posts) {
+        req(update.posts.paging.next)
+      } else {
+        req(update.paging.next)
       }
     })
   }
 }
-
 
 req(url)
