@@ -2,7 +2,7 @@ var async = require("async");
 var request = require('request');
 var redis = require('redis');
 var client = redis.createClient();
-var token = 'EAACEdEose0cBALUgBlSZCroexOVh7QTFMwYVZCoZBw3LHhBIiiA6DNZCEmi2hbG7vZBZBvsj7SMxbb9MkOlZAdUbZCcrXPCs2pceYX1punCP8ngCGlGaNDOhJ9M2KVjHZCdQlz1aLfHAY9SiZCNzIXN7NGrmElyX3ghvfyMAXB7ZCIZAhleZAIfH8MwlJ'
+var token = 'EAACEdEose0cBABRpSCuBpywV4ufxRU8d1CuZCASIl5JSZCGHgtCkvdLAF1J4nnV9sGUWRjQYVfn2XGiJutihbrhoxPD10Olap6WLWrcyjdueYbcRxTopspCebsafJuWSjdJQclq7ZBceUBgTvW8DXq5sMQTTRSUU51Uo94UENGZAr2mYZAQPc'
 
 async.waterfall([
     getID,
@@ -12,47 +12,60 @@ async.waterfall([
 });
 
 function getID(callback) {
-    var ids = ["115987058416365"];
-    console.log(ids)
-    callback(null, ids);
+    var page_id = ["115987058416365"];
+    callback(null, page_id);
 }
 
-function getPaging(ids, url, cb) {
+function getPaging(page_id, url, type, cb) {
     request.get(url, function (error, response, body) {
         var update = JSON.parse(body)
-        if (update.hasOwnProperty('posts')) {
-            var posts = update.posts.data
+        if (update[type]) {
+            var obj = update[type].data
         } else {
-            var posts = update.data
+            var obj = update.data
         }
-        async.forEach(posts, function (estadao, callback) {
+        async.forEach(obj, function (estadao, callback) {
             var id = estadao.id
-            console.log(JSON.stringify(estadao))
             client.set(id, JSON.stringify(estadao))
+            console.log(JSON.stringify(estadao))
             callback();
         })
-        if (update.hasOwnProperty('posts')) {
-            var url = update.posts.paging.next
-            console.log("AQUI")
-            getPaging(ids, url, cb)
-        }if (!update.hasOwnProperty('posts')) {
-            console.log("passou AQUI!!!!!")
+        if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
+            var url = update[type].paging.next
+            getPaging(page_id, url, '', cb)
+        } else if (update.paging && update.paging.hasOwnProperty('next')) {
             var url = update.paging.next
-            getPaging(ids, url, cb)
-        }else{
+            getPaging(page_id, url, '', cb)
+        } else {
             cb();
         }
     })
 }
 
 
-function getPosts(ids, callback) {
-    async.forEach(ids, function (id, cb) {
+
+
+function getPosts(page_id, callback) {
+    async.forEach(page_id, function (id, cb) {
             var url = `https://graph.facebook.com/v2.8/${id}?fields=posts&access_token=${token}`;
-            console.log(url)
-            getPaging(ids, url, cb)
+            //console.log(url)
+            //console.log("Post")
+            getPaging(page_id, url, 'posts', cb)
         }),
         function (err) {
             callback(null);
         }
+}
+
+
+function getComments(post_id, callback) {
+    async.forEach(post_id, function (post, cb) {
+            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments&access_token=${token}`;
+            //console.log(url)
+            //console.log("Comentario")
+            getPaging(post_id, url, 'comments', cb)
+        },
+        function (err) {
+            callback(null);
+        })
 }
