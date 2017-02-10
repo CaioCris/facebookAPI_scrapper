@@ -2,7 +2,9 @@ var async = require("async");
 var request = require('request');
 var redis = require('redis');
 var client = redis.createClient();
-var token = 'EAACEdEose0cBAK57Jj91IrPzf0RbD4SOteYnb15IoEyqP0PwhO63xjAREdYRRtqHZAM5fGCy3Q6Lz8czjgyIdUZBTjfJFbce9DkZCD6WTFN4DS3lDx6zdTALvCGzIOTvBMsswwEZA9iojAb7FdBBQ5Ghd0SJjl0UXDXEaHl2DcWRxIUA7MYC'
+var token = ''
+
+var post_id = [];
 
 async.waterfall([
     getID,
@@ -17,7 +19,7 @@ function getID(callback) {
     callback(null, page_id);
 }
 
-function getPaging(page_id, post_id, url, type, cb) {
+function getPaging(page_id, url, type, cb) {
     request.get(url, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var update = JSON.parse(body)
@@ -29,20 +31,21 @@ function getPaging(page_id, post_id, url, type, cb) {
             var list = [];
             async.forEach(obj, function (estadao, callback) {
                 var id = estadao.id
+                var chave = `fb:${type}:${estadao.id}`;
                 list.push(id)
-                client.set(id, JSON.stringify(estadao))
-                console.log(JSON.stringify(estadao))
+                client.set(chave, JSON.stringify(estadao))
+                //console.log(JSON.stringify(estadao))
                 callback();
             })
             post_id = post_id.concat(list)
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
                 console.log("passou aqui!")
-                getPaging(page_id, post_id, url, '', cb)
-            }else if (update.paging && update.paging.hasOwnProperty('next')) {
+                getPaging(page_id, url, type, cb)
+            } else if (update.paging && update.paging.hasOwnProperty('next')) {
                 var url = update.paging.next
                 console.log("Segunda passada")
-                getPaging(page_id, post_id, url, '', cb)
+                getPaging(page_id, url, type, cb)
             } else {
                 console.log("chamou o else")
                 return cb();
@@ -51,14 +54,15 @@ function getPaging(page_id, post_id, url, type, cb) {
     })
 }
 
+
 function getPosts(page_id, callback) {
     async.forEach(page_id, function (id, cb) {
             var url = `https://graph.facebook.com/v2.8/${id}?fields=posts&access_token=${token}`;
             console.log("Post")
-            getPaging(page_id, [], url, 'posts', cb)
+            getPaging(page_id, url, 'posts', cb)
         },
         function (err) {
-            callback(null);
+            callback(null, post_id);
         })
 }
 
@@ -67,9 +71,9 @@ function getComments(post_id, callback) {
     async.forEach(post_id, function (post, cb) {
             var url = `https://graph.facebook.com/v2.8/${post}?fields=comments&access_token=${token}`;
             console.log("Comentario")
-            getPaging(post_id, [], url, 'comments', cb)
-        }),
+            getPaging('', url, 'comments', cb)
+        },
         function (err) {
             callback(null);
-        }
+        })
 }
