@@ -2,14 +2,14 @@ var async = require("async");
 var request = require('request');
 var redis = require('redis');
 var client = redis.createClient();
-var token = ''
+var token = '1360294374002068%7CsRfrwTeLo4OCM5ksDyBkhrFUL_0'
 
 var post_id = [];
+var comment_id = [];
 
 async.waterfall([
     getID,
-    getPosts,
-    getComments
+    getPosts
 ], function (err) {
     client.quit();
 });
@@ -37,7 +37,11 @@ function getPaging(page_id, url, type, cb) {
                 //console.log(JSON.stringify(estadao))
                 callback();
             })
-            post_id = post_id.concat(list)
+            if (type == 'posts') {
+                post_id = post_id.concat(list)
+            } else {
+                comment_id = comment_id.concat(list)
+            }
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
                 console.log("passou aqui!")
@@ -56,7 +60,7 @@ function getPaging(page_id, url, type, cb) {
 
 
 function getPosts(page_id, callback) {
-    async.forEach(page_id, function (id, cb) {
+    async.forEachLimit(page_id, 100,function (id, cb) {
             var url = `https://graph.facebook.com/v2.8/${id}?fields=posts&access_token=${token}`;
             console.log("Post")
             getPaging(page_id, url, 'posts', cb)
@@ -68,9 +72,20 @@ function getPosts(page_id, callback) {
 
 
 function getComments(post_id, callback) {
-    async.forEach(post_id, function (post, cb) {
+    async.forEachLimit(post_id, 100,function (post, cb) {
             var url = `https://graph.facebook.com/v2.8/${post}?fields=comments&access_token=${token}`;
             console.log("Comentario")
+            getPaging('', url, 'comments', cb)
+        },
+        function (err) {
+            callback(null, comment_id);
+        })
+}
+
+function getThreads(comment_id, callback) {
+    async.forEachLimit(comment_id, 100,function (comment, cb) {
+            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments&access_token=${token}`;
+            console.log("Thread")
             getPaging('', url, 'comments', cb)
         },
         function (err) {
