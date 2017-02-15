@@ -6,12 +6,11 @@ var token = '1360294374002068|sRfrwTeLo4OCM5ksDyBkhrFUL_0'
 
 var post_id = [];
 var comment_id = [];
+var like_id = [];
 
 async.waterfall([
     getID,
-    getPosts,
-    getComments,
-    getThreads
+    getLikes
 ], function (err) {
     client.quit();
 });
@@ -26,14 +25,17 @@ function getPaging(page_id, url, type, cb) {
         if (!error && response.statusCode == 200) {
             var update = JSON.parse(body)
             if (update[type]) {
-                var obj = update[type].data
+                var obj = update[type].data[0].id
             } else {
-                var obj = update.data
+                var obj = update.data[0].likes
             }
+            console.log(update)
+            console.log(obj)
+            process.exit()
             var list = [];
             async.forEach(obj, function (object, callback) {
                 var id = object.id
-                var chave = `fb:${type}:${object.id}`;
+                var chave = `fb:${type} +"_likes":${object.id}`;
                 list.push(id)
                 client.set(chave, JSON.stringify(object))
                 //console.log(JSON.stringify(object))
@@ -41,9 +43,12 @@ function getPaging(page_id, url, type, cb) {
             })
             if (type == 'posts') {
                 post_id = post_id.concat(list)
-            } else {
+            } else if (type == 'comments'){
                 comment_id = comment_id.concat(list)
+            }else{
+                like_id = like_id.concat(list)
             }
+            console.log(like_id)
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
                 console.log("passou aqui!")
@@ -61,36 +66,13 @@ function getPaging(page_id, url, type, cb) {
 }
 
 
-function getPosts(page_id, callback) {
+function getLikes(page_id, callback) {
     async.forEach(page_id,function (id, cb) {
-            var url = `https://graph.facebook.com/v2.8/${id}?fields=posts&access_token=${token}`;
-            console.log("Post")
+            var url = `https://graph.facebook.com/v2.8/${id}?fields=posts%7Blikes%7D&access_token=${token}`;
+            console.log("Likes")
             getPaging(page_id, url, 'posts', cb)
         },
         function (err) {
             callback(null, post_id);
-        })
-}
-
-
-function getComments(post_id, callback) {
-    async.forEachLimit(post_id, 100,function (post, cb) {
-            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments&access_token=${token}`;
-            console.log("Comentario")
-            getPaging('', url, 'comments', cb)
-        },
-        function (err) {
-            callback(null, comment_id);
-        })
-}
-
-function getThreads(comment_id, callback) {
-    async.forEachLimit(comment_id, 100,function (comment, cb) {
-            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments&access_token=${token}`;
-            console.log("Thread")
-            getPaging('', url, 'comments', cb)
-        },
-        function (err) {
-            callback(null);
         })
 }

@@ -15,10 +15,16 @@ async.waterfall([
     client.quit();
 });
 
-function GetID(callback) {
-    var ids = ["115987058416365"];
-    //falta o id do post
-    callback(null, ids);
+async.waterfall([
+    getID,
+    getLikes
+], function (err) {
+    client.quit();
+});
+
+function getID(callback) {
+    var page_id = ["316449433298"];
+    callback(null, page_id);
 }
 
 function GetLikes(ids, callback) {

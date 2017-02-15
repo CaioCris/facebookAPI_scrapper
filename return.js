@@ -8,7 +8,7 @@ var async = require("async");
 //Pegar as informações do redis e salvar elas dentro do MongoDB
 client.keys('*', function (err, keys) {
     MongoClient.connect(url, function (err, db) {
-        async.forEachLimit(keys, 100,  function (k, callback) {
+        async.forEachLimit(keys, 100, function (k, callback) {
             client.get(k, function (err, value) {
                 var type = k.split(":");
                 if (type[1] == "posts") {
@@ -18,7 +18,7 @@ client.keys('*', function (err, keys) {
                 }
                 arquivos.insert(JSON.parse(value), function (err, result) {
                     console.log(JSON.parse(value))
-                    //client.del(k)
+                    client.del(k)
                     callback();
                 })
             })

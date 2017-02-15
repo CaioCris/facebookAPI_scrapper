@@ -2,13 +2,13 @@ var request = require('request');
 var redis = require('redis');
 var client = redis.createClient();
 var MongoClient = require('mongodb').MongoClient
-var url = 'mongodb://localhost:27017/likes';
+var url = 'mongodb://localhost:27017/facebook';
 var async = require("async");
 
 //Pegar as informações do redis e salvar elas dentro do MongoDB
 client.keys('*', function (err, keys) {
     MongoClient.connect(url, function (err, db) {
-        async.each(keys, function (k, callback) {
+        async.forEachLimit(keys, 100, function (k, callback) {
             client.get(k, function (err, value) {
                 var arquivos = db.collection('likes');
                 arquivos.insert(JSON.parse(value), function (err, result) {
@@ -17,7 +17,7 @@ client.keys('*', function (err, keys) {
                     callback();
                 })
             })
-        }, function(err){
+        }, function (err) {
             db.close();
             client.quit();
         })
