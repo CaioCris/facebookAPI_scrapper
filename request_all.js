@@ -10,7 +10,11 @@ var comment_id = [];
 async.waterfall([
     getID,
     getPosts,
-    getPosts_likes
+    getPosts_reactions,
+    getComments,
+    getComments_reactions,
+    getThreads,
+    getThreads_reactions
 ], function (err) {
     client.quit();
 });
@@ -44,21 +48,21 @@ function getPaging(page_id, url, type, cb) {
             }
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
-                console.log("passou aqui!")
+                console.log("passou aqui!", type)
                 getPaging(page_id, url, type, cb)
             } else if (update.paging && update.paging.hasOwnProperty('next')) {
                 var url = update.paging.next
-                console.log("Segunda passada")
+                console.log("Segunda passada", type)
                 getPaging(page_id, url, type, cb)
             } else {
-                console.log("chamou o else")
+                console.log("chamou o else", type)
                 return cb();
             }
         }
     })
 }
 
-function getLikes(page_id, post_id, comment_id, url_like, type, cb) {
+function getReactions(page_id, post_id, comment_id, url_like, type, cb) {
     request.get(url_like, function (error, response, body) {
         if (!error && response.statusCode == 200) {
             var update = JSON.parse(body)
@@ -77,20 +81,19 @@ function getLikes(page_id, post_id, comment_id, url_like, type, cb) {
                 }
                 object.parent_id = parent_id
                 var chave = `fb:${type}:${parent_id}`;
-                console.log(object)
                 client.set(chave, JSON.stringify(object))
                 callback();
             })
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
-                console.log("passou aqui! - likes")
+                console.log("passou aqui! - reactions")
                 getPaging(page_id, url_like, type, cb)
             } else if (update.paging && update.paging.hasOwnProperty('next')) {
                 var url = update.paging.next
-                console.log("Segunda passada - likes")
+                console.log("Segunda passada - reactions")
                 getPaging(page_id, url_like, type, cb)
             } else {
-                console.log("chamou o else - likes")
+                console.log("chamou o else - reactions")
                 return cb();
             }
         }
@@ -108,12 +111,12 @@ function getPosts(page_id, callback) {
         })
 }
 
-function getPosts_likes(post_id, callback) {
-    async.forEachLimit(post_id, 100, function (post_likes, cb) {
-            var url_like = `https://graph.facebook.com/v2.8/${post_likes}?fields=likes&access_token=${token}`;
-            var id = post_likes
-            console.log("Post_likes")
-            getLikes('', id, '', url_like, 'likes', cb)
+function getPosts_reactions(post_id, callback) {
+    async.forEachLimit(post_id, 100, function (post_reactions, cb) {
+            var url_like = `https://graph.facebook.com/v2.8/${post_reactions}?fields=reactions&access_token=${token}`;
+            var id = post_reactions
+            console.log("Post_reactions")
+            getReactions('', id, '', url_like, 'reactions', cb)
         },
         function (err) {
             callback(null, post_id);
@@ -122,7 +125,7 @@ function getPosts_likes(post_id, callback) {
 
 function getComments(post_id, callback) {
     async.forEachLimit(post_id, 100, function (post, cb) {
-            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments{comment_count,message,from,created_time}&access_token=${token}`;
+            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments{like_count,comment_count,message,from,created_time}&access_token=${token}`;
             console.log("Comentario")
             getPaging('', url, 'comments', cb)
         },
@@ -131,12 +134,12 @@ function getComments(post_id, callback) {
         })
 }
 
-function getComments_likes(comment_id, callback) {
-    async.forEachLimit(comment_id, 100, function (comment_likes, cb) {
-            var url_like = `https://graph.facebook.com/v2.8/${comment_likes}?fields=likes&access_token=${token}`;
-            var id = comment_likes
-            console.log("Comment_likes")
-            getLikes('', '', id, url_like, 'likes', cb)
+function getComments_reactions(comment_id, callback) {
+    async.forEachLimit(comment_id, 100, function (comment_reactions, cb) {
+            var url_like = `https://graph.facebook.com/v2.8/${comment_reactions}?fields=reactions&access_token=${token}`;
+            var id = comment_reactions
+            console.log("Comment_reactions")
+            getReactions('', '', id, url_like, 'reactions', cb)
         },
         function (err) {
             callback(null, comment_id);
@@ -145,7 +148,7 @@ function getComments_likes(comment_id, callback) {
 
 function getThreads(comment_id, callback) {
     async.forEachLimit(comment_id, 100, function (comment, cb) {
-            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments{comment_count,message,from,created_time}&access_token=${token}`;
+            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments{like_count,comment_count,message,from,created_time}&access_token=${token}`;
             console.log("Thread")
             getPaging('', url, 'comments', cb)
         },
@@ -154,12 +157,12 @@ function getThreads(comment_id, callback) {
         })
 }
 
-function getThreads(comment_id, callback) {
-    async.forEachLimit(comment_id, 100, function (threads_likes, cb) {
-            var url_like = `https://graph.facebook.com/v2.8/${threads_likes}?fields=likes&access_token=${token}`;
-            var id = threads_likes
-            console.log("Threads_likes")
-            getLikes('', '', id, url_like, 'likes', cb)
+function getThreads_reactions(comment_id, callback) {
+    async.forEachLimit(comment_id, 100, function (threads_reactions, cb) {
+            var url_like = `https://graph.facebook.com/v2.8/${threads_reactions}?fields=reactions&access_token=${token}`;
+            var id = threads_reactions
+            console.log("Threads_reactions")
+            getReactions('', '', id, url_like, 'reactions', cb)
         },
         function (err) {
             callback(null);

@@ -10,8 +10,7 @@ var comment_id = [];
 async.waterfall([
     getID,
     getPosts,
-    getComments,
-    getThreads
+    
 ], function (err) {
     client.quit();
 });
@@ -36,7 +35,6 @@ function getPaging(page_id, url, type, cb) {
                 var chave = `fb:${type}:${object.id}`;
                 list.push(id)
                 client.set(chave, JSON.stringify(object))
-                //console.log(JSON.stringify(object))
                 callback();
             })
             if (type == 'posts') {
@@ -46,51 +44,49 @@ function getPaging(page_id, url, type, cb) {
             }
             if (update[type] && update[type].paging && update[type].paging.hasOwnProperty('next')) {
                 var url = update[type].paging.next
-                console.log("passou aqui!")
+                console.log("passou aqui!", type)
                 getPaging(page_id, url, type, cb)
             } else if (update.paging && update.paging.hasOwnProperty('next')) {
                 var url = update.paging.next
-                console.log("Segunda passada")
+                console.log("Segunda passada", type)
                 getPaging(page_id, url, type, cb)
             } else {
-                console.log("chamou o else")
+                console.log("chamou o else", type)
                 return cb();
             }
         }
     })
 }
 
-
 function getPosts(page_id, callback) {
-    async.forEach(page_id,function (id, cb) {
+    async.forEach(page_id, function (id, cb) {
             var url = `https://graph.facebook.com/v2.8/${id}?fields=posts&access_token=${token}`;
             console.log("Post")
             getPaging(page_id, url, 'posts', cb)
         },
         function (err) {
             callback(null, post_id);
-        })
+        });
 }
 
-
 function getComments(post_id, callback) {
-    async.forEachLimit(post_id, 100,function (post, cb) {
-            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments&access_token=${token}`;
+    async.forEachLimit(post_id, 100, function (post, cb) {
+            var url = `https://graph.facebook.com/v2.8/${post}?fields=comments{like_count,comment_count,message,from,created_time}&access_token=${token}`;
             console.log("Comentario")
             getPaging('', url, 'comments', cb)
         },
         function (err) {
             callback(null, comment_id);
-        })
+        });
 }
 
 function getThreads(comment_id, callback) {
-    async.forEachLimit(comment_id, 100,function (comment, cb) {
-            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments&access_token=${token}`;
+    async.forEachLimit(comment_id, 100, function (comment, cb) {
+            var url = `https://graph.facebook.com/v2.8/${comment}?fields=comments{like_count,comment_count,message,from,created_time}&access_token=${token}`;
             console.log("Thread")
             getPaging('', url, 'comments', cb)
         },
         function (err) {
             callback(null);
-        })
+        });
 }
