@@ -13,8 +13,10 @@ client.keys('*', function (err, keys) {
                 var type = k.split(":");
                 if (type[1] == "posts") {
                     var arquivos = db.collection('posts');
-                } else {
+                } else if (type[1] == "comments") {
                     var arquivos = db.collection('comments');
+                } else {
+                    var arquivos = db.collection('likes');
                 }
                 arquivos.insert(JSON.parse(value), function (err, result) {
                     console.log(JSON.parse(value))
