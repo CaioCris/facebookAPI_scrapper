@@ -2,7 +2,7 @@ var async = require("async");
 var request = require('request');
 var redis = require('redis');
 var client = redis.createClient();
-var token = '1360294374002068|sRfrwTeLo4OCM5ksDyBkhrFUL_0'
+var token = ''
 
 var post_id = [];
 var comment_id = [];
